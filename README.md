@@ -32,3 +32,43 @@ node
     Promise.all([p1, p2, p3]).then((v) => {
         resolved(v);
     })
+
+## Examples
+
+Example rest calls to ignite the group event
+
+**POST** /create
+
+* id:
+    Unique id (e.g. uuid v4). This id will be used for the referencing pieces as groupid
+* description:
+    Optional description text
+* payload:
+    Optional agnostic payload that will be commited on success and failure events
+* expected:
+    List of expected ids of the pieces that need to be finished for the group policy. This is optional and refered as strict mode
+* handler:
+    Handler for group resolving. Success and failure are propagating into the collector topic by default. You can define additional propagation targets
+
+Example:
+
+    {
+        "id": "F0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "description": "optional description",
+        "payload": {},
+        "expected": [
+            "A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+            "B0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+            "C0CABCA1-64AE-40A3-ABEB-0741ACF1FF81"
+        ],
+        "handler": {
+            "onsuccess": {
+                "topic": "special_topic",
+                "payload": {}
+            },
+            "onfailure": {
+                "topic": "special_failure_topic",
+                "payload": {}
+            }
+        }
+    }

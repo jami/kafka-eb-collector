@@ -1,0 +1,20 @@
+{
+    "id": "F0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+    "description": "optional description",
+    "payload": {},
+    "expected": [
+        "A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "B0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "C0CABCA1-64AE-40A3-ABEB-0741ACF1FF81"
+    ],
+    "handler": {
+        "onsuccess": {
+            "topic": "special_topic",
+            "payload": {}
+        },
+        "onfailure": {
+            "topic": "special_failure_topic",
+            "payload": {}
+        }
+    }
+}
