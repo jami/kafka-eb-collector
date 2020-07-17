@@ -60,8 +60,5 @@ services:
     build:
       context: .
       dockerfile: ./docker/collector/Dockerfile
-    ports:
-      - "9999:9999"
     environment:
       COLLECTOR_BROKERLIST: broker:29092
-      COLLECTOR_ENDPOINT: :9999

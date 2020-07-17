@@ -6,6 +6,41 @@ import (
 	"time"
 )
 
+// GroupTimeoutHandler handles the overdue groups
+func GroupTimeoutHandler(store CollectorStore, eventbusProducer *Producer) error {
+	store.IterateAll(func(key string, data []byte) {
+		fmt.Printf("Iterate key %s", key)
+		header := EventEnvelopGroup{}
+		if err := header.FromBytes(data); err != nil {
+			return
+		}
+
+		if created, err := time.Parse(time.RFC3339, header.CreatedTime); err == nil {
+			till := created.Add(time.Second * time.Duration(header.TTL))
+			if till.Before(time.Now()) {
+				fmt.Printf("Timeout key %s", key)
+
+				failure := EventEnvelopFailure{
+					EventEnvelop: EventEnvelop{
+						Type: "EventGroupCollectorFailure",
+						ID:   header.ID,
+					},
+					FailureEntityID: header.ID,
+					Error:           fmt.Sprintf("Operation timed out after %d seconds", header.TTL),
+					CreatedTime:     header.CreatedTime,
+					ResolvedTime:    time.Now().Format(time.RFC3339),
+					Results:         header.Results,
+					Payload:         header.Payload,
+				}
+				eventbusProducer.SendJSON(failure)
+				store.Delete(header.ID)
+			}
+		}
+	})
+
+	return nil
+}
+
 // GroupCreateHandler creates a new group
 func GroupCreateHandler(store CollectorStore, b []byte, eventbusProducer *Producer) error {
 	header := EventEnvelopGroup{}
@@ -13,7 +48,11 @@ func GroupCreateHandler(store CollectorStore, b []byte, eventbusProducer *Produc
 		return err
 	}
 
-	header.CreatedTime = time.Now().String()
+	if header.TTL <= 0 {
+		header.TTL = DefaultGroupProcessingTTL
+	}
+
+	header.CreatedTime = time.Now().Format(time.RFC3339)
 	header.Results = map[string]interface{}{}
 
 	data, _ := json.Marshal(header)
@@ -42,10 +81,12 @@ func EntityDoneHandler(store CollectorStore, b []byte, eventbusProducer *Produce
 					Type: "EventGroupCollectorFailure",
 					ID:   header.GroupID,
 				},
-				Error:       header.Error,
-				CreatedTime: group.CreatedTime,
-				Results:     group.Results,
-				Payload:     group.Payload,
+				FailureEntityID: header.ID,
+				Error:           header.Error,
+				CreatedTime:     group.CreatedTime,
+				ResolvedTime:    time.Now().Format(time.RFC3339),
+				Results:         group.Results,
+				Payload:         group.Payload,
 			}
 			eventbusProducer.SendJSON(failure)
 			store.Delete(header.GroupID)
@@ -59,7 +100,7 @@ func EntityDoneHandler(store CollectorStore, b []byte, eventbusProducer *Produce
 					ID:   header.GroupID,
 				},
 				CreatedTime:  group.CreatedTime,
-				ResolvedTime: time.Now().String(),
+				ResolvedTime: time.Now().Format(time.RFC3339),
 				Results:      group.Results,
 				Payload:      group.Payload,
 			}

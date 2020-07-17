@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jami/kafka-eb-collector/src"
 )
@@ -20,6 +21,8 @@ var (
 	eventbusProducer *src.Producer
 	eventbusConsumer *src.Consumer
 	store            src.CollectorStore
+	ticker           *time.Ticker = time.NewTicker(10 * time.Second)
+	quit             chan struct{}
 )
 
 type eventbusListener struct {
@@ -52,11 +55,24 @@ func (ebl eventbusListener) Consume(b []byte) error {
 
 // run the listeners
 func run() {
+	// consumer
 	go func() {
 		eventListener := eventbusListener{}
 		log.Fatal(eventbusConsumer.Listen(eventListener, []string{
 			config.EventBusTopic,
 		}))
+	}()
+	// timeout handler
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				src.GroupTimeoutHandler(store, eventbusProducer)
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
 	}()
 }
 

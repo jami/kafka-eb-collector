@@ -9,6 +9,8 @@ import (
 type GroupCollectorEnumeration int
 
 const (
+	// DefaultGroupProcessingTTL lifetime of a group fulfillment request
+	DefaultGroupProcessingTTL = 30
 	// EventGroupCollectorCreate event
 	EventGroupCollectorCreate GroupCollectorEnumeration = iota
 	// EventGroupCollectorEntityDone event
@@ -138,11 +140,12 @@ func (eeed *EventEnvelopEntityDone) FromBytes(b []byte) error {
 // EventEnvelopFailure model
 type EventEnvelopFailure struct {
 	EventEnvelop
-	Error        string                 `json:"error,omitempty"`
-	CreatedTime  string                 `json:"created"`
-	ResolvedTime string                 `json:"resolved"`
-	Results      map[string]interface{} `json:"results"`
-	Payload      interface{}            `json:"payload"`
+	FailureEntityID string                 `json:"entity"`
+	Error           string                 `json:"error,omitempty"`
+	CreatedTime     string                 `json:"created"`
+	ResolvedTime    string                 `json:"resolved"`
+	Results         map[string]interface{} `json:"results"`
+	Payload         interface{}            `json:"payload"`
 }
 
 // EventEnvelopSuccess model
