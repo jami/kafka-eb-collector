@@ -38,7 +38,7 @@ RUN cd $(mktemp -d) \
 COPY . /go/src/github.com/jami/kafka-eb-collector
 WORKDIR /go/src/github.com/jami/kafka-eb-collector
 
-RUN export GOPATH=/go && make deps && make build/linux
+RUN export GOPATH=/go && make deps && make build/collector
 
 # runtime container
 FROM alpine:3.10

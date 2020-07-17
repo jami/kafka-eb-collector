@@ -1,11 +1,12 @@
 GO=go
 RACE := $(shell test $$(go env GOARCH) != "amd64" || (echo "-race"))
 GOFLAGS= 
-BIN=bin/kafka-collector
 VERSION := $(shell git rev-parse HEAD)
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-IMAGE=jami/kafka-eb-collector
 PROJECT=kafka-eb-collector
+COLLECTOR_BIN=bin/kafka-collector
+COLLECTOR_IMAGE=jami/kafka-collector
+COLLECTOR_SOURCE=./src/cli/main.go
 
 all: build/local
 
@@ -21,27 +22,29 @@ help:
 	@echo
 
 deps:
-	go mod download
+	go mod vendor
 
-test/local:
-	ginkgo --race --cover --coverprofile "$(ROOT_DIR)/$(PROJECT).coverprofile" ./...
-	go tool cover -html=$(PROJECT).coverprofile -o "$(PROJECT)_test_coverage.html"
+build/collector:
+	CGO_ENABLED=1 GOOS=linux ${GO} build -a -tags musl -o ${COLLECTOR_BIN} ${COLLECTOR_SOURCE}
 
-build/local:
-	$(GO) build -ldflags "-X main.Version=$(VERSION)" -o $(BIN) $(GOFLAGS) $(RACE) ./src/cli/main.go
+build/collector/local:
+	$(GO) build -ldflags "-X main.Version=$(VERSION)" -o $(COLLECTOR_BIN) $(GOFLAGS) $(RACE) $(COLLECTOR_SOURCE)
 
-build/linux: test/local
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -ldflags "-X main.Version=$(VERSION)" -o "$(BIN)_linux" $(GOFLAGS) ./src/cli/main.go
+build/collector/linux:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -ldflags "-X main.Version=$(VERSION)" -o "$(COLLECTOR_BIN)_linux" $(GOFLAGS) $(COLLECTOR_SOURCE)
 
-build/docker:
-	docker build -t $(IMAGE) .
+build/collector/docker:
+	docker build -t $(COLLECTOR_IMAGE) -f ./docker/collector/Dockerfile .
+
+rebuild/service/collector:
+	docker-compose stop kafka-collector
+	docker-compose rm -f kafka-collector
+	docker-compose build kafka-collector
+	docker-compose create kafka-collector
+	docker-compose start kafka-collector
 
 compose/up: build/linux
 	docker-compose -f docker-compose.yml up -d
 
 compose/down:
 	docker-compose -f docker-compose.yml down
-
-push/docker:
-	echo "$(DOCKER_PASSWORD)" | docker login -u "$(DOCKER_USERNAME)" --password-stdin
-	docker push $(IMAGE):$(TRAVIS_BRANCH)-$(TRAVIS_BUILD_NUMBER)

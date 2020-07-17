@@ -15,10 +15,9 @@ const (
 
 // CLIConfiguration model
 type CLIConfiguration struct {
-	ListenerEndpoint string
-	Broker           string
-	ShowHelp         bool
-	EventBusTopic    string
+	Broker        string
+	ShowHelp      bool
+	EventBusTopic string
 }
 
 func registerVar(name string, target interface{}, desc string) {
@@ -51,7 +50,6 @@ func (ec *CLIConfiguration) Parse() error {
 	registerVar("help", &ec.ShowHelp, "show help dialog")
 	registerVar("event-topic", &ec.EventBusTopic, "kafka topic for events")
 	registerVar("brokerlist", &ec.Broker, "kafka broker list")
-	registerVar("endpoint", &ec.ListenerEndpoint, "kafka topic for events")
 
 	flag.Parse()
 
@@ -61,10 +59,6 @@ func (ec *CLIConfiguration) Parse() error {
 
 	if ec.Broker == "" {
 		return fmt.Errorf("Missing argument - brokerlist")
-	}
-
-	if ec.ListenerEndpoint == "" {
-		return fmt.Errorf("Missing argument - endpoint")
 	}
 
 	return nil

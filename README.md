@@ -52,23 +52,25 @@ Example rest calls to ignite the group event
 
 Example:
 
+Create a collector group
+
     {
-        "id": "F0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
-        "description": "optional description",
-        "payload": {},
+        "id": "myspecialgroup-F0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "type": "EventGroupCollectorCreate",
         "expected": [
-            "A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
-            "B0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
-            "C0CABCA1-64AE-40A3-ABEB-0741ACF1FF81"
+            "A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81"
         ],
-        "handler": {
-            "onsuccess": {
-                "topic": "special_topic",
-                "payload": {}
-            },
-            "onfailure": {
-                "topic": "special_failure_topic",
-                "payload": {}
-            }
+        "payload": {}
+    }
+
+Resolve the task A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81
+
+    {
+        "id": "A0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "type": "EventGroupCollectorEntityDone",
+        "group": "myspecialgroup-F0CABCA1-64AE-40A3-ABEB-0741ACF1FF81",
+        "result": {
+            "foo": 123,
+            "bar": true
         }
     }

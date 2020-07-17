@@ -19,6 +19,7 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -53,3 +54,14 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
+
+  kafka-collector:
+    image: jami/jami/kafka-collector
+    build:
+      context: .
+      dockerfile: ./docker/collector/Dockerfile
+    ports:
+      - "9999:9999"
+    environment:
+      COLLECTOR_BROKERLIST: broker:29092
+      COLLECTOR_ENDPOINT: :9999
